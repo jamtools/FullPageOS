@@ -1,0 +1,9 @@
+services:
+  raspberrypi:
+    build:
+      context: .
+    ports:
+      - "5800:5800"
+      - "5900:5900"
+    security_opt:
+      - seccomp:unconfined
