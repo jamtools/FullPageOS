@@ -10,11 +10,11 @@ export GUI_STARTUP_SCRIPT=/home/pi/browser_scripts/startup.sh
 # export MODULES="base(raspicam, network, disable-services(gui(fullpageos), usage-statistics))"
 
 # if set will enlarge root parition prior to build by provided size in MB
-export BASE_IMAGE_ENLARGEROOT=2000
+export BASE_IMAGE_ENLARGEROOT=4096
 
 # if set will resize root partition on image after build to minimum size +
 # provided size in MB
-export BASE_IMAGE_RESIZEROOT=200
+export BASE_IMAGE_RESIZEROOT=512
 # export GUI_STARTUP_SCRIPT=/opt/custompios/scripts/run_onepageos
 
 export RPI_IMAGER_NAME="${DIST_NAME}"
