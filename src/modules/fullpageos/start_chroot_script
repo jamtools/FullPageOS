@@ -44,7 +44,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/root/bin/firstboot.sh
+ExecStart=/root/custom_scripts/firstboot.sh
 ExecStartPost=/bin/rm -f /etc/systemd/system/firstboot.service
 RemainAfterExit=yes
 
