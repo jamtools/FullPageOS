@@ -37,5 +37,22 @@ apt-get install -y xdotool
 
 set -x
 
+cat <<EOF > /etc/systemd/system/firstboot.service
+[Unit]
+Description=First Boot Script
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/bin/firstboot.sh
+ExecStartPost=/bin/rm -f /etc/systemd/system/firstboot.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable firstboot.service
+
 # Unpack root at the end, so files are modified before
 unpack /filesystem/root /
