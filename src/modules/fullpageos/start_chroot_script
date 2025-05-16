@@ -27,7 +27,7 @@ apt-get install -y python3-pip
 pip3 install pychrome --break-system-packages
 
 # Disable SSH
-rm /boot/ssh
+rm -f /boot/ssh
 
 # Auto-hide mouse support
 apt-get install -y unclutter
