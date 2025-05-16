@@ -3,7 +3,7 @@ export DIST_VERSION=0.4.3
 export MODULES="base(network, gui(fullpageos))"
 # export MODULES="base(network, gui(minimalkioskos))"
 
-export GUI_STARTUP_SCRIPT=/home/pi/scripts/startup.sh
+export GUI_STARTUP_SCRIPT=/home/pi/browser_scripts/startup.sh
 
 # export DIST_NAME=FullpageOS
 # export DIST_VERSION=0.14.0
