@@ -24,7 +24,7 @@ apt-get install -y rpi-chromium-mods
 
 # Install Python dep
 apt-get install -y python3-pip
-pip3 install pychrome
+pip3 install pychrome --break-system-packages
 
 # Disable SSH
 rm /boot/ssh
