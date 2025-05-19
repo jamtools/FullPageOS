@@ -52,6 +52,7 @@ jobs:
     - name: Build Base Image (if not cached)
       if: steps.cache-base.outputs.cache-hit != 'true'
       run: |
+        export MODULES="base(network,gui(fullpageos))"
         cd repository/src
         ../../CustomPiOS/src/update-custompios-paths
         sudo modprobe loop
@@ -60,11 +61,11 @@ jobs:
         cd image
         zip base.img.zip base.img
         rm base.img
-      env:
-        MODULES: "base(network,gui(fullpageos))"
 
     - name: Build Final Image (application layer)
       run: |
+        export BASE_ZIP_IMG="image/base.img.zip"
+        export MODULES="myapp"
         rm -rf repository/src/workspace  # Clean previous build artifacts
         cd repository/src
         sudo modprobe loop
@@ -73,9 +74,6 @@ jobs:
         cd ../image
         zip final.zip final.img
         rm final.img
-      env:
-        BASE_ZIP_IMG: "image/base.img.zip"
-        MODULES: "myapp"
 
     - name: Upload Final Image Artifact
       uses: actions/upload-artifact@v4
