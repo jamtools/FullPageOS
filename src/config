@@ -1,7 +1,7 @@
 export DIST_NAME=minimalKioskOS
 export DIST_VERSION=0.4.3
-export MODULES="base(network, gui(fullpageos))"
-# export MODULES="base(network, gui(minimalkioskos))"
+
+: "${MODULES:?MODULES is not set}"
 
 export GUI_STARTUP_SCRIPT=/home/pi/browser_scripts/startup.sh
 
