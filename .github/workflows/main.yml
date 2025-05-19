@@ -61,7 +61,6 @@ jobs:
         zip base.img.zip base.img
         rm base.img
       env:
-        BASE_ZIP_IMG: base.img.zip
         MODULES: "base(network,gui(fullpageos))"
 
     - name: Build Final Image (application layer)
