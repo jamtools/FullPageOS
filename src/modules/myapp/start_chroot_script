@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# Source error handling, leave this in place
+set -x
+set -e
+
+source /common.sh
+
+unpack /filesystem/home/pi /home/pi pi
+
+set +x
+
+echo done

@@ -1,10 +1,11 @@
-name: Build Image
+name: Build CustomPiOS Image
 
 on: push
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Free up disk space
       uses: insightsengineering/disk-space-reclaimer@v1
@@ -34,17 +35,51 @@ jobs:
         repository: ${{ github.repository }}
         path: repository
         submodules: true
-    - name: Download Raspbian Image
-      run: cd repository/src/image && wget -q -c --trust-server-names 'https://downloads.raspberrypi.org/raspios_lite_armhf_latest'
-    - name: Update CustomPiOS Paths
-      run: cd repository/src && ../../CustomPiOS/src/update-custompios-paths
-    - name: Build Image
-      run: sudo modprobe loop && cd repository/src && sudo bash -x ./build_dist
-    - name: Copy Output
-      run: cp ${{ github.workspace }}/repository/src/workspace/*-raspios-*-lite.img build.img
-    - name: Zip Output
-      run: gzip build.img
-    - uses: actions/upload-artifact@v4
+    - name: Check cache for base image
+      id: cache-base
+      uses: actions/cache@v4
       with:
-        name: build.img.gz
-        path: build.img.gz
+        path: repository/src/image/base.img.zip
+        key: base-image-${{ hashFiles('repository/src/modules/fullpageos/**') }}
+
+    - name: Download Raspbian Image
+      if: steps.cache-base.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p repository/src/image
+        cd repository/src/image
+        wget -q -O raspios_lite.zip 'https://downloads.raspberrypi.org/raspios_lite_armhf_latest'
+
+    - name: Build Base Image (if not cached)
+      if: steps.cache-base.outputs.cache-hit != 'true'
+      run: |
+        cd repository/src
+        ../../CustomPiOS/src/update-custompios-paths
+        sudo modprobe loop
+        sudo bash -x ./build_dist
+        cp workspace/*-raspios-*-lite.img image/base.img
+        cd image
+        zip base.img.zip base.img
+        rm base.img
+      env:
+        BASE_ZIP_IMG: base.img.zip
+        MODULES: "base(network,gui(fullpageos))"
+
+    - name: Build Final Image (application layer)
+      run: |
+        rm -rf repository/src/workspace  # Clean previous build artifacts
+        cd repository/src
+        sudo modprobe loop
+        sudo bash -x ./build_dist
+        cp workspace/*-raspios-*-lite.img ../image/final.img
+        cd ../image
+        zip final.zip final.img
+        rm final.img
+      env:
+        BASE_ZIP_IMG: "image/base.img.zip"
+        MODULES: "myapp"
+
+    - name: Upload Final Image Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: final.img.zip
+        path: repository/src/image/final.img.zip
