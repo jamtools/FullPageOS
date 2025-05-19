@@ -5,54 +5,63 @@
 # GPL V3
 ########
 
+# Add timing function
+log_timing() {
+  local operation=$1
+  local duration=$2
+  echo "[TIMING] $operation: $duration seconds"
+}
+
+measure_time() {
+  local operation=$1
+  local start_time=$(date +%s)
+  echo "[TIMING] Starting: $operation"
+  shift
+  "$@"
+  local end_time=$(date +%s)
+  local duration=$((end_time - start_time))
+  log_timing "$operation" "$duration"
+}
+
+# Overall script timing
+SCRIPT_START_TIME=$(date +%s)
+echo "[TIMING] Starting fullpageos chroot script at $(date)"
 
 # Source error handling, leave this in place
 set -x
 set -e
 
-source /common.sh
+measure_time "Loading common.sh" source /common.sh
 
-unpack /filesystem/home/pi /home/pi pi
-unpack /filesystem/home/root /root root
-unpack /filesystem/boot /boot
+measure_time "Unpacking /filesystem/home/pi" unpack /filesystem/home/pi /home/pi pi
+measure_time "Unpacking /filesystem/home/root" unpack /filesystem/home/root /root root
+measure_time "Unpacking /filesystem/boot" unpack /filesystem/boot /boot
 
 set +x
 
-apt-get update
+measure_time "apt-get update" apt-get update
 # Install Chromium
-apt-get install -y rpi-chromium-mods
+measure_time "Installing Chromium" apt-get install -y rpi-chromium-mods
 
 # Install Python dep
-apt-get install -y python3-pip
-pip3 install pychrome --break-system-packages
+measure_time "Installing Python dep" apt-get install -y python3-pip
+measure_time "Installing pychrome" pip3 install pychrome --break-system-packages
 
 # Disable SSH
-rm -f /boot/ssh
+measure_time "Disabling SSH" rm -f /boot/ssh
 
 # Auto-hide mouse support
-apt-get install -y unclutter
+measure_time "Installing unclutter" apt-get install -y unclutter
 
 # Install xdotool
-apt-get install -y xdotool
+measure_time "Installing xdotool" apt-get install -y xdotool
 
 set -x
 
-cat <<EOF > /etc/systemd/system/firstboot.service
-[Unit]
-Description=First Boot Script
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/root/custom_scripts/firstboot.sh
-ExecStartPost=/bin/rm -f /etc/systemd/system/firstboot.service
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable firstboot.service
-
 # Unpack root at the end, so files are modified before
-unpack /filesystem/root /
+measure_time "Unpacking /filesystem/root" unpack /filesystem/root /
+
+# Overall script timing
+SCRIPT_END_TIME=$(date +%s)
+echo "[TIMING] Finished fullpageos chroot script at $(date)"
+log_timing "Full script" $((SCRIPT_END_TIME - SCRIPT_START_TIME))
