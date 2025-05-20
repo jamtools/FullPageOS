@@ -61,19 +61,19 @@ jobs:
         zip base.img.zip base.img
         rm base.img
 
-    - name: Build Final Image (application layer)
-      run: |
-        rm -rf repository/src/workspace  # Clean previous build artifacts
-        cd repository/src
-        sudo modprobe loop
-        sudo MODULES="myapp" BASE_ZIP_IMG="image/base.img.zip" bash -x ./build_dist
-        cp workspace/*-raspios-*-lite.img ../image/final.img
-        cd ../image
-        zip final.zip final.img
-        rm final.img
+    # - name: Build Final Image (application layer)
+    #   run: |
+    #     rm -rf repository/src/workspace  # Clean previous build artifacts
+    #     cd repository/src
+    #     sudo modprobe loop
+    #     sudo MODULES="myapp" BASE_ZIP_IMG="image/base.img.zip" bash -x ./build_dist
+    #     cp workspace/*-raspios-*-lite.img ../image/final.img
+    #     cd ../image
+    #     zip final.zip final.img
+    #     rm final.img
 
-    - name: Upload Final Image Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: final.img.zip
-        path: repository/src/image/final.img.zip
+    # - name: Upload Final Image Artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: final.img.zip
+    #     path: repository/src/image/final.img.zip
