@@ -52,11 +52,10 @@ jobs:
     - name: Build Base Image (if not cached)
       if: steps.cache-base.outputs.cache-hit != 'true'
       run: |
-        export MODULES="base(network,gui(fullpageos))"
         cd repository/src
         ../../CustomPiOS/src/update-custompios-paths
         sudo modprobe loop
-        sudo bash -x ./build_dist
+        sudo MODULES="base(network,gui(fullpageos))" bash -x ./build_dist
         cp workspace/*-raspios-*-lite.img image/base.img
         cd image
         zip base.img.zip base.img
@@ -64,12 +63,10 @@ jobs:
 
     - name: Build Final Image (application layer)
       run: |
-        export BASE_ZIP_IMG="image/base.img.zip"
-        export MODULES="myapp"
         rm -rf repository/src/workspace  # Clean previous build artifacts
         cd repository/src
         sudo modprobe loop
-        sudo bash -x ./build_dist
+        sudo MODULES="myapp" BASE_ZIP_IMG="image/base.img.zip" bash -x ./build_dist
         cp workspace/*-raspios-*-lite.img ../image/final.img
         cd ../image
         zip final.zip final.img
