@@ -39,7 +39,7 @@ jobs:
       id: cache-base
       uses: actions/cache@v4
       with:
-        path: repository/src/image/base.img.zip
+        path: repository/image/base.img.zip
         key: base-image-${{ hashFiles('repository/src/modules/fullpageos/**') }}
 
     - name: Download Raspbian Image
@@ -61,6 +61,11 @@ jobs:
         zip base.img.zip base.img
         rm base.img
 
+    - name: Confirm base image is present
+      run: |
+        ls -l repository/image
+        test -f repository/image/base.img.zip || (echo "Base image not found!" && exit 1)
+
     - name: Build Final Image (application layer)
       run: |
         sudo rm -rf repository/src/workspace  # Clean previous build artifacts
@@ -68,6 +73,7 @@ jobs:
         ../../CustomPiOS/src/update-custompios-paths
         sudo modprobe loop
         sudo MODULES="myapp" BASE_ZIP_IMG="image/base.img.zip" bash -x ./build_dist
+        ls workspace
         cp workspace/*-raspios-*-lite.img ../image/final.img
         cd ../image
         zip final.zip final.img
