@@ -65,6 +65,7 @@ jobs:
       run: |
         sudo rm -rf repository/src/workspace  # Clean previous build artifacts
         cd repository/src
+        ../../CustomPiOS/src/update-custompios-paths
         sudo modprobe loop
         sudo MODULES="myapp" BASE_ZIP_IMG="image/base.img.zip" bash -x ./build_dist
         cp workspace/*-raspios-*-lite.img ../image/final.img
