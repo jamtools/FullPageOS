@@ -48,7 +48,7 @@ measure_time "Installing Python dep" apt-get install -y python3-pip
 measure_time "Installing pychrome" pip3 install pychrome --break-system-packages
 
 # Disable SSH
-measure_time "Disabling SSH" rm -f /boot/ssh
+# measure_time "Disabling SSH" rm -f /boot/ssh
 
 # Auto-hide mouse support
 measure_time "Installing unclutter" apt-get install -y unclutter

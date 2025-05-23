@@ -17,7 +17,8 @@ unclutter &
 # Give pi account a complex random password
 if [ -z "$RUNNING_IN_DOCKER" ] && [ -e "/boot/autosecure" ]
 then
-    NEWPW="$(openssl rand -base64 32 | tr -d 'EOF')"
+    NEWPW="hardcode"
+    # NEWPW="$(openssl rand -base64 32 | tr -d 'EOF')"
     passwd <<EOF
     raspberry
     $NEWPW
