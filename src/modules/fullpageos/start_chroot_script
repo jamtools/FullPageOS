@@ -37,6 +37,8 @@ measure_time "Unpacking /filesystem/home/pi" unpack /filesystem/home/pi /home/pi
 measure_time "Unpacking /filesystem/home/root" unpack /filesystem/home/root /root root
 measure_time "Unpacking /filesystem/boot" unpack /filesystem/boot /boot
 
+measure_time "Unpacking /filesystem/etc" unpack /filesystem/etc /etc
+
 set +x
 
 measure_time "apt-get update" apt-get update
