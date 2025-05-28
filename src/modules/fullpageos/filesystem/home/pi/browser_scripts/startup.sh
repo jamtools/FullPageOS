@@ -14,17 +14,17 @@ fi
 # Autohide mouse when inactive
 unclutter &
 
-# Give pi account a complex random password
-if [ -z "$RUNNING_IN_DOCKER" ] && [ -e "/boot/autosecure" ]
-then
-    NEWPW="hardcode"
-    # NEWPW="$(openssl rand -base64 32 | tr -d 'EOF')"
-    passwd <<EOF
-    raspberry
-    $NEWPW
-    $NEWPW
-EOF
-fi
+# # Give pi account a complex random password
+# if [ -z "$RUNNING_IN_DOCKER" ] && [ -e "/boot/autosecure" ]
+# then
+#     NEWPW="hardcode"
+#     # NEWPW="$(openssl rand -base64 32 | tr -d 'EOF')"
+#     passwd <<EOF
+#     raspberry
+#     $NEWPW
+#     $NEWPW
+# EOF
+# fi
 
 # Start Python-based controller to ensure reloads on load failures
 if [ -n "$RUNNING_IN_DOCKER" ]; then
