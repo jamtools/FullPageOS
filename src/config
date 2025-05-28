@@ -1,3 +1,4 @@
+export BASE_ARCH=arm64
 export DIST_NAME=minimalKioskOS
 export DIST_VERSION=0.4.3
 export MODULES="base(network, gui(fullpageos))"
