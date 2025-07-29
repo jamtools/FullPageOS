@@ -75,8 +75,6 @@ EOF
 
 systemctl enable firstboot.service
 
-systemctl --user enable display-rotate.service
-
 systemctl enable boot-logger.service
 
 set -x
