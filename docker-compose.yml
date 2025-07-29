@@ -1,9 +1,11 @@
 services:
-  raspberrypi:
-    build:
-      context: .
-    ports:
-      - "5800:5800"
-      - "5900:5900"
-    security_opt:
-      - seccomp:unconfined
+  custompios:
+    image: ghcr.io/guysoft/custompios:devel
+    container_name: mydistro_builder
+    tty: true
+    restart: always
+    privileged: true
+    volumes:
+      - ./:/distro
+    devices:
+      - /dev/loop-control

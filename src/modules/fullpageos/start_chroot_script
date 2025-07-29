@@ -75,6 +75,10 @@ EOF
 
 systemctl enable firstboot.service
 
+systemctl --user enable display-rotate.service
+
+systemctl enable boot-logger.service
+
 set -x
 
 # Unpack root at the end, so files are modified before

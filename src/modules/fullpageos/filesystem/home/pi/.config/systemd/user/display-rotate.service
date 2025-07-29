@@ -1,0 +1,13 @@
+[Unit]
+Description=Rotate Display to Landscape
+After=graphical-session.target
+Requires=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/bash -c '/usr/bin/xrandr --output DSI-2 --rotate left && /usr/bin/xinput set-prop 6 "Coordinate Transformation Matrix" 0 -1 1 1 0 0 0 0 1'
+
+[Install]
+WantedBy=default.target
