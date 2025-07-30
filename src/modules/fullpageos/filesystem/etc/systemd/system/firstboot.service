@@ -1,11 +1,11 @@
 [Unit]
 Description=First Boot Script
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=/custom_scripts/firstboot.sh
-ExecStartPost=/bin/rm -f /etc/systemd/system/firstboot.service
 RemainAfterExit=yes
 
 [Install]

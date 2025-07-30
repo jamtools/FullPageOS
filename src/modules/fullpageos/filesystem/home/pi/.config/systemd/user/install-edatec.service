@@ -1,0 +1,14 @@
+[Unit]
+Description=Install edatec drivers
+After=graphical-session.target
+Requires=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 5
+ExecStart=/custom_scripts/install-edatec.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
