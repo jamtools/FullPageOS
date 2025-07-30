@@ -58,21 +58,6 @@ measure_time "Installing unclutter" apt-get install -y unclutter
 # Install xdotool
 measure_time "Installing xdotool" apt-get install -y xdotool
 
-cat <<EOF > /etc/systemd/system/firstboot.service
-[Unit]
-Description=First Boot Script
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/custom_scripts/firstboot.sh
-ExecStartPost=/bin/rm -f /etc/systemd/system/firstboot.service
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
 systemctl enable firstboot.service
 
 systemctl enable boot-logger.service
