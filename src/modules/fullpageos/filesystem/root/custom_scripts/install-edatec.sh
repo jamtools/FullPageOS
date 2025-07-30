@@ -17,8 +17,11 @@ while [ "$(date +%s)" -lt 1704067200 ]; do
   sleep 2
 done
 
-# Mark done
+
+sudo update-ca-certificates --fresh
+
+curl -fsSL https://apt.edatec.cn/bsp/ed-install.sh -o /tmp/ed-install.sh
+
 touch "$MARKER"
 
-# Run the installer
-curl -fsSL https://apt.edatec.cn/bsp/ed-install.sh | sudo bash -s hmi3010_101c
+sudo bash /tmp/ed-install.sh hmi3010_101c
