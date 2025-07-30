@@ -20,7 +20,18 @@ done
 
 sudo update-ca-certificates --fresh
 
-curl -fsSL https://apt.edatec.cn/bsp/ed-install.sh -o /tmp/ed-install.sh
+for i in {1..5}; do
+  if curl -fsSL https://apt.edatec.cn/bsp/ed-install.sh -o /tmp/ed-install.sh; then
+    break
+  fi
+  echo "curl failed, retrying in 5 seconds..."
+  sleep 5
+done
+
+if [ ! -f /tmp/ed-install.sh ]; then
+  echo "Failed to download ed-install.sh"
+  exit 1
+fi
 
 touch "$MARKER"
 
