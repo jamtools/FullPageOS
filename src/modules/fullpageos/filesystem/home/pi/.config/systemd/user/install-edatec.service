@@ -1,6 +1,7 @@
 [Unit]
 Description=Install edatec drivers
-After=graphical-session.target
+After=network-online.target time-sync.target
+Wants=network-online.target
 Requires=graphical-session.target
 PartOf=graphical-session.target
 
