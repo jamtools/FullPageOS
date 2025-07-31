@@ -1,6 +1,5 @@
 [Unit]
 Description=IP Configurator Web Interface
-Documentation=file:///home/pi/apps/README.md
 After=network.target
 
 [Service]
@@ -8,24 +7,7 @@ Type=simple
 ExecStart=/home/pi/apps/ip_configurator_executable
 Restart=always
 RestartSec=5
-User=pi
-Group=pi
 WorkingDirectory=/home/pi/apps
-
-# Environment
-Environment=HOME=/home/pi
-Environment=PATH=/usr/local/bin:/usr/bin:/bin
-
-# Logging
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=ip-configurator
-
-# Security (basic hardening for user service)
-NoNewPrivileges=yes
-PrivateTmp=yes
-ProtectHome=no
-ProtectSystem=strict
 
 [Install]
 WantedBy=default.target
