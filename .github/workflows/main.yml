@@ -34,6 +34,16 @@ jobs:
         repository: ${{ github.repository }}
         path: repository
         submodules: true
+    - name: Setup Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+    - name: Compile IP Configurator
+      run: cd apps/ip_configurator && deno task compile
+    - name: Move IP Configurator Executable
+      run: |
+        cp repository/apps/ip_configurator/ip_configurator_executable repository/src/modules/fullpageos/filesystem/home/pi/apps/
+        chmod +x repository/src/modules/fullpageos/filesystem/home/pi/apps/ip_configurator_executable
     - name: Download Raspbian Image
       run: cd repository/src/image && wget -q -c --trust-server-names 'https://downloads.raspberrypi.org/raspios_lite_arm64_latest'
     - name: Update CustomPiOS Paths
