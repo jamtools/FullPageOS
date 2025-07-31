@@ -8,7 +8,7 @@ set -euo pipefail
 echo "Setting up network configuration staging system..."
 
 # Make the processor script executable
-chmod +x /usr/local/bin/process-network-configs
+chmod +x /custom_scripts/process-network-configs
 
 # Create staging directories with proper permissions
 mkdir -p /var/lib/network-staging/{pending,processed,status}

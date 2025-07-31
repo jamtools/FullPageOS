@@ -5,7 +5,7 @@ After=systemd-networkd.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/process-network-configs
+ExecStart=/custom_scripts/process-network-configs
 User=root
 Group=root
 

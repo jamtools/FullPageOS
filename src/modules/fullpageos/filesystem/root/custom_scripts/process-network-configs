@@ -1,0 +1,173 @@
+#!/bin/bash
+
+# Network Configuration Processor
+# Securely processes network configuration files from staging directory
+
+set -euo pipefail
+
+# Directories
+STAGING_DIR="/var/lib/network-staging"
+PENDING_DIR="${STAGING_DIR}/pending"
+PROCESSED_DIR="${STAGING_DIR}/processed"
+STATUS_DIR="${STAGING_DIR}/status"
+NETWORK_CONFIG_DIR="/etc/systemd/network"
+TARGET_FILE="${NETWORK_CONFIG_DIR}/10-eth0.network"
+
+# Logging
+LOG_TAG="network-config-processor"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$LOG_TAG] $*" | systemd-cat -p info
+}
+
+log_error() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$LOG_TAG] ERROR: $*" | systemd-cat -p err
+}
+
+# Validate network configuration file
+validate_network_config() {
+    local file="$1"
+    local config_id="$2"
+    
+    # Check file size (reasonable limit)
+    local size=$(stat -c %s "$file" 2>/dev/null || echo 0)
+    if [ "$size" -gt 4096 ]; then
+        log_error "Config $config_id: File too large ($size bytes)"
+        return 1
+    fi
+    
+    # Check for required sections
+    if ! grep -q "^\[Match\]" "$file"; then
+        log_error "Config $config_id: Missing [Match] section"
+        return 1
+    fi
+    
+    if ! grep -q "^\[Network\]" "$file"; then
+        log_error "Config $config_id: Missing [Network] section"
+        return 1
+    fi
+    
+    # Check for Name=eth0 in Match section
+    if ! grep -A 10 "^\[Match\]" "$file" | grep -q "^Name=eth0"; then
+        log_error "Config $config_id: Must target eth0 interface"
+        return 1
+    fi
+    
+    # Validate IP addresses in Address and Gateway fields
+    local addresses=$(grep "^Address=" "$file" | cut -d= -f2 | cut -d/ -f1 || true)
+    local gateways=$(grep "^Gateway=" "$file" | cut -d= -f2 || true)
+    
+    for addr in $addresses $gateways; do
+        if [[ -n "$addr" ]] && ! [[ "$addr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+            log_error "Config $config_id: Invalid IP address format: $addr"
+            return 1
+        fi
+        
+        # Check IP address ranges
+        IFS='.' read -ra PARTS <<< "$addr"
+        for part in "${PARTS[@]}"; do
+            if [ "$part" -gt 255 ]; then
+                log_error "Config $config_id: Invalid IP address: $addr"
+                return 1
+            fi
+        done
+    done
+    
+    log "Config $config_id: Validation passed"
+    return 0
+}
+
+# Process a single configuration file
+process_config_file() {
+    local file="$1"
+    local basename=$(basename "$file")
+    local config_id="${basename%.network}"
+    local timestamp=$(date '+%Y%m%d_%H%M%S')
+    
+    log "Processing configuration: $config_id"
+    
+    # Validate the configuration
+    if ! validate_network_config "$file" "$config_id"; then
+        echo "FAILED: Validation failed" > "${STATUS_DIR}/${config_id}.status"
+        mv "$file" "${PROCESSED_DIR}/${timestamp}_${basename}.failed"
+        return 1
+    fi
+    
+    # Backup existing configuration
+    if [ -f "$TARGET_FILE" ]; then
+        cp "$TARGET_FILE" "${TARGET_FILE}.backup.${timestamp}"
+        log "Backed up existing configuration to ${TARGET_FILE}.backup.${timestamp}"
+    fi
+    
+    # Install new configuration
+    if cp "$file" "$TARGET_FILE"; then
+        log "Successfully installed new network configuration"
+        
+        # Set proper permissions
+        chmod 644 "$TARGET_FILE"
+        chown root:root "$TARGET_FILE"
+        
+        # Move processed file to archive
+        mv "$file" "${PROCESSED_DIR}/${timestamp}_${basename}"
+        
+        # Create success status
+        echo "SUCCESS: Configuration applied at $(date)" > "${STATUS_DIR}/${config_id}.status"
+        
+        # Restart systemd-networkd
+        if systemctl restart systemd-networkd.service; then
+            log "Successfully restarted systemd-networkd"
+            echo "SUCCESS: Network service restarted" >> "${STATUS_DIR}/${config_id}.status"
+        else
+            log_error "Failed to restart systemd-networkd"
+            echo "WARNING: Failed to restart network service" >> "${STATUS_DIR}/${config_id}.status"
+        fi
+        
+        return 0
+    else
+        log_error "Failed to install configuration file"
+        echo "FAILED: Could not install configuration" > "${STATUS_DIR}/${config_id}.status"
+        mv "$file" "${PROCESSED_DIR}/${timestamp}_${basename}.failed"
+        return 1
+    fi
+}
+
+# Main processing loop
+main() {
+    log "Starting network configuration processing"
+    
+    # Ensure directories exist with proper permissions
+    mkdir -p "$PROCESSED_DIR" "$STATUS_DIR"
+    chmod 755 "$PROCESSED_DIR" "$STATUS_DIR"
+    
+    # Process all pending network configuration files
+    local processed_count=0
+    local failed_count=0
+    
+    if [ -d "$PENDING_DIR" ]; then
+        for file in "$PENDING_DIR"/*.network; do
+            # Skip if no files match
+            [ -f "$file" ] || continue
+            
+            if process_config_file "$file"; then
+                ((processed_count++))
+            else
+                ((failed_count++))
+            fi
+        done
+    fi
+    
+    if [ $processed_count -gt 0 ] || [ $failed_count -gt 0 ]; then
+        log "Processing complete: $processed_count successful, $failed_count failed"
+    else
+        log "No configuration files to process"
+    fi
+    
+    # Clean up old status files (older than 24 hours)
+    find "$STATUS_DIR" -name "*.status" -mtime +1 -delete 2>/dev/null || true
+    
+    # Clean up old processed files (older than 7 days)
+    find "$PROCESSED_DIR" -name "*" -mtime +7 -delete 2>/dev/null || true
+}
+
+# Run main function
+main "$@"
