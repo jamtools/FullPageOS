@@ -5,17 +5,6 @@
 # GPL V3
 ########
 
-echo 'Acquire::http::No-Cache "true";' > /etc/apt/apt.conf.d/99no-cache
-
-sed -i 's|http://raspbian\.mirror\.axinja\.net|http://raspbian.raspberrypi.com|' /etc/apt/sources.list
-sed -i 's|http://raspbian\.mirror\.axinja\.net|http://raspbian.raspberrypi.com|' /etc/apt/sources.list.d/*.list || true
-sed -i 's|http://archive.raspberrypi.com|http://archive.raspberrypi.com|' /etc/apt/sources.list || true
-
-# Clean up stale or partial packages
-apt-get clean
-rm -rf /var/lib/apt/lists/*
-apt-get update
-
 # Add timing function
 log_timing() {
   local operation=$1
@@ -59,6 +48,7 @@ measure_time "Installing Chromium" apt-get install -y rpi-chromium-mods
 # Install Python dep
 measure_time "Installing Python dep" apt-get install -y python3-pip
 measure_time "Installing pychrome" pip3 install pychrome --break-system-packages
+measure_time "Installing watchdog" pip3 install watchdog --break-system-packages
 
 # Disable SSH
 # measure_time "Disabling SSH" rm -f /boot/ssh
