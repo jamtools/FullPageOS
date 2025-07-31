@@ -17,22 +17,23 @@ while [ "$(date +%s)" -lt 1704067200 ]; do
   sleep 2
 done
 
+# sudo update-ca-certificates --fresh
 
-sudo update-ca-certificates --fresh
+# for i in {1..5}; do
+#   if curl -fsSL https://apt.edatec.cn/bsp/ed-install.sh -o /tmp/ed-install.sh; then
+#     break
+#   fi
+#   echo "curl failed, retrying in 5 seconds..."
+#   sleep 5
+# done
 
-for i in {1..5}; do
-  if curl -fsSL https://apt.edatec.cn/bsp/ed-install.sh -o /tmp/ed-install.sh; then
-    break
-  fi
-  echo "curl failed, retrying in 5 seconds..."
-  sleep 5
-done
-
-if [ ! -f /tmp/ed-install.sh ]; then
-  echo "Failed to download ed-install.sh"
-  exit 1
-fi
+# if [ ! -f /tmp/ed-install.sh ]; then
+#   echo "Failed to download ed-install.sh"
+#   exit 1
+# fi
 
 touch "$MARKER"
 
-sudo bash /tmp/ed-install.sh hmi3010_101c
+# sudo bash /tmp/ed-install.sh hmi3010_101c
+
+sudo bash /custom_scripts/vendor_ed-install.sh hmi3010_101c
