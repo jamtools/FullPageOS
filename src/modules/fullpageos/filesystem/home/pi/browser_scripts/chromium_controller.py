@@ -1,10 +1,24 @@
+import json
 import os
 import subprocess
 import sys
 import time
 import traceback
+import urllib.request
+import urllib.error
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 import pychrome
+
+
+class IPConfigHandler(FileSystemEventHandler):
+    def __init__(self, controller):
+        self.controller = controller
+        
+    def on_modified(self, event):
+        if not event.is_directory and event.src_path.endswith('ip_config.json'):
+            self.controller.check_jace_ip()
 
 
 class ChromiumController():
@@ -12,6 +26,8 @@ class ChromiumController():
         self.env = os.environ.copy()
 
         self.base_dir = "/config" if "RUNNING_IN_DOCKER" in self.env else "/boot"
+        self.ip_config_file = "/home/pi/apps/ip_configurator/ip_config.json"
+        self.current_jace_url = "http://localhost:8000"  # Default fallback
 
         self.kiosk_urls = []
         self.kiosk_urls_display_time = []
@@ -52,20 +68,73 @@ class ChromiumController():
         self.tab.DOM.enable()
         self.tab.Page.enable()
         self.tab.Network.enable()
+        
+        # Set up file watching for IP config changes
+        self.setup_ip_config_monitoring()
+        
+        # Initial check of jace_ip
+        self.check_jace_ip()
+        
         self._load_page()
+
+    def setup_ip_config_monitoring(self):
+        """Set up file monitoring for IP config changes"""
+        try:
+            event_handler = IPConfigHandler(self)
+            self.observer = Observer()
+            self.observer.schedule(event_handler, os.path.dirname(self.ip_config_file), recursive=False)
+            self.observer.start()
+        except Exception as e:
+            print(f"Failed to setup IP config monitoring: {e}")
+            self.observer = None
+            
+    def __del__(self):
+        """Cleanup file observer"""
+        if hasattr(self, 'observer') and self.observer:
+            self.observer.stop()
+            self.observer.join()
+            
+    def check_jace_ip(self):
+        """Check if jace_ip is reachable and update current_jace_url"""
+        previous_url = self.current_jace_url
+        
+        try:
+            with open(self.ip_config_file, 'r') as f:
+                config = json.load(f)
+                jace_ip = config.get('jace_ip', '')
+                
+            if jace_ip:
+                # Try to connect to jace_ip
+                test_url = f"http://{jace_ip}"
+                try:
+                    with urllib.request.urlopen(test_url, timeout=5) as response:
+                        if response.getcode() == 200:
+                            self.current_jace_url = test_url
+                            print(f"JACE IP {jace_ip} is reachable, using {test_url}")
+                        else:
+                            raise urllib.error.HTTPError(test_url, response.getcode(), "Non-200 response", None, None)
+                except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
+                    print(f"Failed to connect to JACE IP {jace_ip}: {e}")
+                    self.current_jace_url = "http://localhost:8000"
+            else:
+                # No jace_ip configured, use localhost
+                self.current_jace_url = "http://localhost:8000"
+                
+        except Exception as e:
+            print(f"Error checking IP config: {e}")
+            self.current_jace_url = "http://localhost:8000"
+            
+        # If URL changed, navigate to new URL
+        if previous_url != self.current_jace_url:
+            print(f"URL changed from {previous_url} to {self.current_jace_url}, navigating...")
+            self._load_page()
 
     def run_forever(self):
         while True:
-            if not (self.initial_load and self.kiosk_urls_keypresses[self.current_kiosk_url_index]):
-                if self.next_url_time_left > 0:
-                    self.next_url_time_left -= 1
-                elif self.next_url_time_left == 0:
-                    self._load_page()
-
-                if self.mute_time_left > 0:
-                    self.mute_time_left -= 1
-                elif self.mute_time_left == 0:
-                    subprocess.run(['amixer', 'set', 'PCM', 'unmute'], check=True)
+            if self.mute_time_left > 0:
+                self.mute_time_left -= 1
+            elif self.mute_time_left == 0:
+                subprocess.run(['amixer', 'set', 'PCM', 'unmute'], check=True)
 
             time.sleep(1)
 
@@ -84,14 +153,6 @@ class ChromiumController():
             self.mute_time_left = self.mute_time
 
         if self.initial_load:
-            if self.kiosk_urls_keypresses[self.current_kiosk_url_index]:
-                for key in self.kiosk_urls_keypresses[self.current_kiosk_url_index]:
-                    command, data = key.split(':', 1)
-                    chromium_window_id = subprocess.check_output(['xdotool', 'search', '--onlyvisible', '--class', 'chromium'], env=self.env).splitlines()[0]
-                    subprocess.run(['xdotool', 'windowactivate', '--sync', chromium_window_id], check=True, env=self.env)
-                    subprocess.run(['xdotool', command, data], check=True, env=self.env)
-                    time.sleep(1)
-
             self.initial_load = False
         else:
             for key in self.spamkeys:
@@ -109,14 +170,9 @@ class ChromiumController():
         self._load_page()
 
     def _load_page(self):
-        self.current_kiosk_url_index += 1
-        if self.current_kiosk_url_index >= len(self.kiosk_urls):
-            self.current_kiosk_url_index = 0
-
-        self.next_url_time_left = self.kiosk_urls_display_time[self.current_kiosk_url_index]
-
+        # Use dynamic jace URL instead of cycling through kiosk_urls
         self.initial_load = True
-        self.tab.Page.navigate(url=self.kiosk_urls[self.current_kiosk_url_index])
+        self.tab.Page.navigate(url=self.current_jace_url)
 
 
 while True:
