@@ -54,7 +54,10 @@ jobs:
       run: cp ${{ github.workspace }}/repository/src/workspace/*-raspios-*-lite.img build.img
     - name: Zip Output
       run: gzip build.img
+    - name: Set artifact name
+      id: artifact
+      run: echo "name=$(date '+%Y%m%d_%H%M%S')_${{ github.sha }}_toucheth.img.gz" >> $GITHUB_OUTPUT
     - uses: actions/upload-artifact@v4
       with:
-        name: build.img.gz
+        name: ${{ steps.artifact.outputs.name }}
         path: build.img.gz
