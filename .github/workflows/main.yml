@@ -39,7 +39,7 @@ jobs:
       with:
         deno-version: v1.x
     - name: Compile IP Configurator
-      run: cd apps/ip_configurator && deno task compile
+      run: cd repository/apps/ip_configurator && deno task compile
     - name: Move IP Configurator Executable
       run: |
         cp repository/apps/ip_configurator/ip_configurator_executable repository/src/modules/fullpageos/filesystem/home/pi/apps/
