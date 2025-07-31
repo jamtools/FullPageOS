@@ -1,0 +1,21 @@
+[Unit]
+Description=Network Configuration Processor
+Documentation=file:///var/lib/network-staging/README.md
+After=systemd-networkd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/process-network-configs
+User=root
+Group=root
+
+# Basic security hardening
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+
+# File system access - allow what's needed
+ReadWritePaths=/var/lib/network-staging /etc/systemd/network
+
+[Install]
+WantedBy=multi-user.target

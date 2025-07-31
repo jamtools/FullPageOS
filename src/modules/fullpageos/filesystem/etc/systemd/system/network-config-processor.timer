@@ -1,0 +1,11 @@
+[Unit]
+Description=Network Configuration Processor Timer
+Documentation=file:///var/lib/network-staging/README.md
+
+[Timer]
+# Check for new network configurations every 5 seconds
+OnBootSec=30sec
+OnUnitActiveSec=5sec
+
+[Install]
+WantedBy=timers.target
