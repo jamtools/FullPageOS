@@ -35,9 +35,9 @@ jobs:
         path: repository
         submodules: true
     - name: Setup Deno
-      uses: denoland/setup-deno@v1
+      uses: denoland/setup-deno@v2
       with:
-        deno-version: v1.x
+        deno-version: v2.x
     - name: Compile IP Configurator
       run: cd repository/apps/ip_configurator && deno task compile
     - name: Move IP Configurator Executable
