@@ -6,7 +6,7 @@ import time
 import traceback
 import urllib.request
 import urllib.error
-from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
 import pychrome
@@ -18,6 +18,7 @@ class IPConfigHandler(FileSystemEventHandler):
         
     def on_modified(self, event):
         if not event.is_directory and event.src_path.endswith('ip_config.json'):
+            print(f"IP config file modified: {event.src_path}")
             self.controller.check_jace_ip()
 
 
@@ -61,7 +62,7 @@ class ChromiumController():
         """Set up file monitoring for IP config changes"""
         try:
             event_handler = IPConfigHandler(self)
-            self.observer = Observer()
+            self.observer = PollingObserver()
             self.observer.schedule(event_handler, os.path.dirname(self.ip_config_file), recursive=False)
             self.observer.start()
         except Exception as e:
@@ -80,7 +81,9 @@ class ChromiumController():
         
         try:
             with open(self.ip_config_file, 'r') as f:
-                config = json.load(f)
+                configs = json.load(f)
+                # Get the most recent config (first in array)
+                config = configs[0] if configs else {}
                 jace_ip = config.get('jace_ip', '')
                 
             if jace_ip:

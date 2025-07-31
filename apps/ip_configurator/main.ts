@@ -38,7 +38,7 @@ const parseNetworkConfig = async (): Promise<CurrentConfig> => {
         const jsonData = await Deno.readTextFile(CONFIG_FILE)
         const configs = JSON.parse(jsonData) as IpConfig[]
         if (configs.length > 0) {
-            const latest = configs[configs.length - 1]
+            const latest = configs[0]
             if (latest.touchscreen_ip) currentConfig.touchscreen_ip = latest.touchscreen_ip
             if (latest.gateway) currentConfig.gateway = latest.gateway
             if (latest.jace_ip) currentConfig.jace_ip = latest.jace_ip
@@ -185,7 +185,7 @@ const saveConfiguration = async (config: IpConfig): Promise<void> => {
             // File doesn't exist yet, start with empty array
         }
 
-        configs.push(config)
+        configs.unshift(config)
 
         await Deno.writeTextFile(CONFIG_FILE, JSON.stringify(configs, null, 2))
 
