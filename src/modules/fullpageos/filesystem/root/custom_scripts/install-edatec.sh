@@ -32,6 +32,8 @@ done
 #   exit 1
 # fi
 
+sleep 20
+
 touch "$MARKER"
 
 # sudo bash /tmp/ed-install.sh hmi3010_101c
