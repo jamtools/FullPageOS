@@ -15,7 +15,7 @@ import pychrome
 class IPConfigHandler(FileSystemEventHandler):
     def __init__(self, controller):
         self.controller = controller
-        
+
     def on_modified(self, event):
         if not event.is_directory and event.src_path.endswith('ip_config.json'):
             print(f"IP config file modified: {event.src_path}")
@@ -49,13 +49,14 @@ class ChromiumController():
         self.tab.DOM.enable()
         self.tab.Page.enable()
         self.tab.Network.enable()
-        
+        self.tab.Runtime.enable()
+
         # Set up file watching for IP config changes
         self.setup_ip_config_monitoring()
-        
+
         # Initial check of jace_ip
         self.check_jace_ip()
-        
+
         self._load_page()
 
     def setup_ip_config_monitoring(self):
@@ -68,24 +69,24 @@ class ChromiumController():
         except Exception as e:
             print(f"Failed to setup IP config monitoring: {e}")
             self.observer = None
-            
+
     def __del__(self):
         """Cleanup file observer"""
         if hasattr(self, 'observer') and self.observer:
             self.observer.stop()
             self.observer.join()
-            
+
     def check_jace_ip(self):
         """Check if jace_ip is reachable and update current_jace_url"""
         previous_url = self.current_jace_url
-        
+
         try:
             with open(self.ip_config_file, 'r') as f:
                 configs = json.load(f)
                 # Get the most recent config (first in array)
                 config = configs[0] if configs else {}
                 jace_ip = config.get('jace_ip', '')
-                
+
             if jace_ip:
                 # Try to connect to jace_ip
                 test_url = f"http://{jace_ip}"
@@ -102,11 +103,11 @@ class ChromiumController():
             else:
                 # No jace_ip configured, use localhost
                 self.current_jace_url = "http://localhost:8000"
-                
+
         except Exception as e:
             print(f"Error checking IP config: {e}")
             self.current_jace_url = "http://localhost:8000"
-            
+
         # If URL changed, navigate to new URL
         if previous_url != self.current_jace_url:
             print(f"URL changed from {previous_url} to {self.current_jace_url}, navigating...")
@@ -149,7 +150,15 @@ class ChromiumController():
     def _load_page(self):
         # Use dynamic jace URL instead of cycling through kiosk_urls
         self.initial_load = True
-        self.tab.Page.navigate(url=self.current_jace_url)
+
+        # Use location.replace() to navigate without adding to history
+        js_code = f"window.location.replace('{self.current_jace_url}');"
+        try:
+            self.tab.Runtime.evaluate(expression=js_code)
+        except Exception as e:
+            print(f"Failed to use location.replace, falling back to navigate: {e}")
+            # Fallback to normal navigation if Runtime.evaluate fails
+            self.tab.Page.navigate(url=self.current_jace_url)
 
 
 while True:
