@@ -105,6 +105,24 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
           color: #721c24;
           border: 1px solid #f5c6cb;
         }
+        .extension-link {
+          display: inline-block;
+          margin-top: 20px;
+          padding: 10px 20px;
+          background-color: #2196F3;
+          color: white;
+          text-decoration: none;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+        .extension-link:hover {
+          background-color: #1976D2;
+        }
+        .extension-section {
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #ddd;
+        }
       </style>
     </head>
     <body>
@@ -112,13 +130,13 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
       ${message ? `<div class="message ${message.includes('Error') ? 'error' : 'success'}">${message}</div>` : ''}
       <form method="POST" action="/">
         <div class="form-group">
-          <label for="touchscreen_ip">Touchscreen IP Address:</label>
+          <label for="jace_ip">JACE IP Address:</label>
           <input
             type="text"
-            id="touchscreen_ip"
-            name="touchscreen_ip"
+            id="jace_ip"
+            name="jace_ip"
             pattern="^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$"
-            value="${currentValues.touchscreen_ip}"
+            value="${currentValues.jace_ip}"
             required
           />
         </div>
@@ -134,18 +152,27 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
           />
         </div>
         <div class="form-group">
-          <label for="jace_ip">JACE IP Address:</label>
+          <label for="touchscreen_ip">Touchscreen IP Address:</label>
           <input
             type="text"
-            id="jace_ip"
-            name="jace_ip"
+            id="touchscreen_ip"
+            name="touchscreen_ip"
             pattern="^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$"
-            value="${currentValues.jace_ip}"
+            value="${currentValues.touchscreen_ip}"
             required
           />
         </div>
         <button type="submit">Save Configuration</button>
       </form>
+      <div class="extension-section">
+        <h3>Virtual Keyboard Extension</h3>
+        <p>If you need to install the Simple Virtual Keyboard extension:</p>
+        <a href="https://chromewebstore.google.com/detail/simple-virtual-keyboard/cjabmkimbcmhhepelfhjhbhonnapiipj" 
+           target="_blank" 
+           class="extension-link">
+          Install Virtual Keyboard Extension
+        </a>
+      </div>
     </body>
     </html>
   `
@@ -193,22 +220,22 @@ const saveConfiguration = async (config: IpConfig): Promise<void> => {
         const networkConfig = generateNetworkConfig(config.touchscreen_ip, config.gateway)
         const configId = `eth0_${Date.now()}`
         const stagingFile = `${STAGING_PENDING_DIR}/${configId}.network`
-        
+
         // Ensure staging directory exists (but don't create if system hasn't set it up)
         try {
             await Deno.stat(STAGING_PENDING_DIR)
         } catch {
             throw new Error('Network staging directory not available. System may not be properly configured.')
         }
-        
+
         // Write configuration to staging directory with atomic operation
         const tempFile = `${stagingFile}.tmp`
         await Deno.writeTextFile(tempFile, networkConfig)
         await Deno.rename(tempFile, stagingFile)
-        
+
         // Wait briefly for processing and check status
         await new Promise(resolve => setTimeout(resolve, 1000))
-        
+
         try {
             const statusFile = `${STAGING_STATUS_DIR}/${configId}.status`
             const status = await Deno.readTextFile(statusFile)
