@@ -105,24 +105,6 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
           color: #721c24;
           border: 1px solid #f5c6cb;
         }
-        .extension-link {
-          display: inline-block;
-          margin-top: 20px;
-          padding: 10px 20px;
-          background-color: #2196F3;
-          color: white;
-          text-decoration: none;
-          border-radius: 4px;
-          font-size: 14px;
-        }
-        .extension-link:hover {
-          background-color: #1976D2;
-        }
-        .extension-section {
-          margin-top: 30px;
-          padding-top: 20px;
-          border-top: 1px solid #ddd;
-        }
       </style>
     </head>
     <body>
@@ -164,15 +146,6 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
         </div>
         <button type="submit">Save Configuration</button>
       </form>
-      <div class="extension-section">
-        <h3>Virtual Keyboard Extension</h3>
-        <p>If you need to install the Simple Virtual Keyboard extension:</p>
-        <a href="https://chromewebstore.google.com/detail/simple-virtual-keyboard/cjabmkimbcmhhepelfhjhbhonnapiipj" 
-           target="_blank" 
-           class="extension-link">
-          Install Virtual Keyboard Extension
-        </a>
-      </div>
     </body>
     </html>
   `
