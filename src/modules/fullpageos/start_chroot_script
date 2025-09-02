@@ -75,3 +75,6 @@ measure_time "Setting up network staging" bash /custom_scripts/setup-network-sta
 SCRIPT_END_TIME=$(date +%s)
 echo "[TIMING] Finished fullpageos chroot script at $(date)"
 log_timing "Full script" $((SCRIPT_END_TIME - SCRIPT_START_TIME))
+
+echo "server time.nist.gov" >> /etc/ntp.conf
+echo "server ntp.ubuntu.com" >> /etc/ntp.conf
