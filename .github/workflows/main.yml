@@ -49,6 +49,8 @@ jobs:
     - name: Update CustomPiOS Paths
       run: cd repository/src && ../../CustomPiOS/src/update-custompios-paths
     - name: Build Image
+      env:
+        GUI_INCLUDE_ACCELERATION: no
       run: sudo modprobe loop && cd repository/src && sudo BASE_ARCH=arm64 bash -x ./build_dist
     - name: Copy Output
       run: cp ${{ github.workspace }}/repository/src/workspace/*-raspios-*-lite.img build.img
