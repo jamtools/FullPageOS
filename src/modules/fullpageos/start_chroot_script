@@ -74,7 +74,13 @@ SCRIPT_END_TIME=$(date +%s)
 echo "[TIMING] Finished fullpageos chroot script at $(date)"
 log_timing "Full script" $((SCRIPT_END_TIME - SCRIPT_START_TIME))
 
-sudo systemctl disable NetworkManager
+# sudo systemctl disable NetworkManager
+sudo mkdir -p /etc/NetworkManager/conf.d
+cat <<'EOF' | sudo tee /etc/NetworkManager/conf.d/unmanaged-eth0.conf >/dev/null
+[keyfile]
+unmanaged-devices=interface-name:eth0
+EOF
+
 sudo systemctl enable systemd-networkd
 
 echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
