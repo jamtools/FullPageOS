@@ -76,5 +76,11 @@ SCRIPT_END_TIME=$(date +%s)
 echo "[TIMING] Finished fullpageos chroot script at $(date)"
 log_timing "Full script" $((SCRIPT_END_TIME - SCRIPT_START_TIME))
 
+sudo systemctl disable NetworkManager
+sudo systemctl enable systemd-networkd
+sudo systemctl enable systemd-resolved
+
+echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
+
 echo "server time.nist.gov" >> /etc/ntp.conf
 echo "server ntp.ubuntu.com" >> /etc/ntp.conf
