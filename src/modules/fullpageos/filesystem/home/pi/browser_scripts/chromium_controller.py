@@ -32,7 +32,7 @@ class ChromiumController():
         self.ip_config_file = "/home/pi/apps/ip_configurator/ip_config.json"
         self.current_jace_url = "http://localhost:8000"  # Default fallback
         self.using_fallback = True  # Track if we're using the fallback URL
-        self.jace_check_interval = 30  # Check every 30 seconds when using fallback
+        self.jace_check_interval = 5  # Check every 30 seconds when using fallback
         self.last_jace_check_time = 0  # Last time we checked for JACE availability
 
 
