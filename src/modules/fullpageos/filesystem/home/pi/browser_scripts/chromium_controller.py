@@ -31,6 +31,9 @@ class ChromiumController():
         self.base_dir = "/config" if "RUNNING_IN_DOCKER" in self.env else "/boot"
         self.ip_config_file = "/home/pi/apps/ip_configurator/ip_config.json"
         self.current_jace_url = "http://localhost:8000"  # Default fallback
+        self.using_fallback = True  # Track if we're using the fallback URL
+        self.jace_check_interval = 30  # Check every 30 seconds when using fallback
+        self.last_jace_check_time = 0  # Last time we checked for JACE availability
 
 
         try:
@@ -81,6 +84,7 @@ class ChromiumController():
     def check_jace_ip(self):
         """Check if jace_ip is reachable and update current_jace_url"""
         previous_url = self.current_jace_url
+        self.last_jace_check_time = time.time()
 
         try:
             with open(self.ip_config_file, 'r') as f:
@@ -99,19 +103,23 @@ class ChromiumController():
                     with urllib.request.urlopen(test_url, timeout=5, context=ssl_context) as response:
                         if response.getcode() == 200:
                             self.current_jace_url = test_url
+                            self.using_fallback = False
                             print(f"JACE IP {jace_ip} is reachable, using {test_url}")
                         else:
                             raise urllib.error.HTTPError(test_url, response.getcode(), "Non-200 response", None, None)
                 except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
                     print(f"Failed to connect to JACE IP {jace_ip}: {e}")
                     self.current_jace_url = "http://localhost:8000"
+                    self.using_fallback = True
             else:
                 # No jace_ip configured, use localhost
                 self.current_jace_url = "http://localhost:8000"
+                self.using_fallback = True
 
         except Exception as e:
             print(f"Error checking IP config: {e}")
             self.current_jace_url = "http://localhost:8000"
+            self.using_fallback = True
 
         # If URL changed, navigate to new URL
         if previous_url != self.current_jace_url:
@@ -124,6 +132,14 @@ class ChromiumController():
                 self.mute_time_left -= 1
             elif self.mute_time_left == 0:
                 subprocess.run(['amixer', 'set', 'PCM', 'unmute'], check=True)
+                self.mute_time_left = -1
+
+            # Periodically check if JACE is available when using fallback URL
+            current_time = time.time()
+            if (self.using_fallback and
+                current_time - self.last_jace_check_time > self.jace_check_interval):
+                print("Periodic check for JACE availability")
+                self.check_jace_ip()
 
             time.sleep(1)
 
