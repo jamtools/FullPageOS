@@ -6,6 +6,8 @@ import time
 import traceback
 import urllib.request
 import urllib.error
+import ssl
+
 from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler
 
@@ -88,10 +90,13 @@ class ChromiumController():
                 jace_ip = config.get('jace_ip', '')
 
             if jace_ip:
-                # Try to connect to jace_ip
-                test_url = f"http://{jace_ip}"
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+                test_url = f"https://{jace_ip}"
                 try:
-                    with urllib.request.urlopen(test_url, timeout=5) as response:
+                    with urllib.request.urlopen(test_url, timeout=5, context=ssl_context) as response:
                         if response.getcode() == 200:
                             self.current_jace_url = test_url
                             print(f"JACE IP {jace_ip} is reachable, using {test_url}")
