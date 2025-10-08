@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Setup minimalKioskOS
 # Install Chromium and disable SSH
-# Written by Sylvia van Os
 # GPL V3
 ########
 
