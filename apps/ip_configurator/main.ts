@@ -86,9 +86,16 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
           border-radius: 4px;
           cursor: pointer;
           font-size: 16px;
+          margin-right: 10px;
         }
         button:hover {
           background-color: #45a049;
+        }
+        button.secondary {
+          background-color: #008CBA;
+        }
+        button.secondary:hover {
+          background-color: #007399;
         }
         .message {
           padding: 10px;
@@ -105,7 +112,75 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
           color: #721c24;
           border: 1px solid #f5c6cb;
         }
+        .network-status {
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f5f5f5;
+          border-radius: 4px;
+          border: 1px solid #ddd;
+        }
+        .network-status pre {
+          margin: 10px 0 0 0;
+          padding: 10px;
+          background-color: #2d2d2d;
+          color: #f8f8f2;
+          border-radius: 4px;
+          overflow-x: auto;
+          max-height: 400px;
+          overflow-y: auto;
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+        .button-group {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+        }
       </style>
+      <script>
+        async function fetchNetworkStatus() {
+          const statusDiv = document.getElementById('network-status');
+          statusDiv.innerHTML = '<p>Loading network status...</p>';
+
+          try {
+            const response = await fetch('/network-status');
+            const data = await response.json();
+
+            if (data.error) {
+              statusDiv.innerHTML = '<p style="color: #721c24;">Error: ' + data.error + '</p>';
+            } else {
+              statusDiv.innerHTML = '<h3>Network Status (ifconfig)</h3><pre>' + data.output + '</pre>';
+            }
+          } catch (error) {
+            statusDiv.innerHTML = '<p style="color: #721c24;">Error fetching network status: ' + error.message + '</p>';
+          }
+        }
+
+        async function toggleNetworkStatus() {
+          const statusDiv = document.getElementById('network-status');
+          const button = document.getElementById('network-status-btn');
+          const refreshButton = document.getElementById('refresh-status-btn');
+
+          // If already visible, hide it
+          if (statusDiv.style.display === 'block') {
+            statusDiv.style.display = 'none';
+            button.textContent = 'Show Network Status';
+            refreshButton.style.display = 'none';
+            return;
+          }
+
+          // Show and load
+          statusDiv.style.display = 'block';
+          button.textContent = 'Hide Network Status';
+          refreshButton.style.display = 'inline-block';
+          await fetchNetworkStatus();
+        }
+
+        async function refreshNetworkStatus() {
+          await fetchNetworkStatus();
+        }
+      </script>
     </head>
     <body>
       <h1>Network Configuration</h1>
@@ -144,8 +219,13 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
             required
           />
         </div>
-        <button type="submit">Save Configuration</button>
+        <div class="button-group">
+          <button type="submit">Save Configuration</button>
+          <button type="button" id="network-status-btn" class="secondary" onclick="toggleNetworkStatus()">Show Network Status</button>
+          <button type="button" id="refresh-status-btn" class="secondary" onclick="refreshNetworkStatus()" style="display: none;">Refresh Network Status</button>
+        </div>
       </form>
+      <div id="network-status" class="network-status" style="display: none;"></div>
     </body>
     </html>
   `
@@ -259,6 +339,27 @@ app.post('/', async (c) => {
     } catch (error) {
         const currentValues = await parseNetworkConfig()
         return c.html(generateHtmlForm(currentValues, `Error: ${error instanceof Error ? error.message : String(error)}`), 500)
+    }
+})
+
+app.get('/network-status', async (c) => {
+    try {
+        const command = new Deno.Command('ifconfig', {
+            stdout: 'piped',
+            stderr: 'piped',
+        })
+
+        const {code, stdout, stderr} = await command.output()
+
+        if (code !== 0) {
+            const errorText = new TextDecoder().decode(stderr)
+            return c.json({error: `ifconfig failed: ${errorText}`}, 500)
+        }
+
+        const output = new TextDecoder().decode(stdout)
+        return c.json({output})
+    } catch (error) {
+        return c.json({error: `Failed to execute ifconfig: ${error instanceof Error ? error.message : String(error)}`}, 500)
     }
 })
 

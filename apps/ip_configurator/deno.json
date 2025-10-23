@@ -3,8 +3,8 @@
     "hono": "jsr:@hono/hono@^4.8.10"
   },
   "tasks": {
-    "start": "deno run --allow-env --allow-net --allow-read --allow-write main.ts",
-    "compile": "deno compile --allow-env --allow-net --allow-write --allow-read --target aarch64-unknown-linux-gnu -o ip_configurator_executable main.ts"
+    "start": "deno run --allow-env --allow-net --allow-read --allow-write --allow-run=ifconfig main.ts",
+    "compile": "deno compile --allow-env --allow-net --allow-write --allow-read --allow-run=ifconfig --target aarch64-unknown-linux-gnu -o ip_configurator_executable main.ts"
   },
   "compilerOptions": {
     "jsx": "precompile",
