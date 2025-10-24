@@ -12,16 +12,14 @@ MARKER="$HOME/.edatec_installed"
 NETWORK_MARKER="$HOME/.network_configured"
 if [ -f "$MARKER" ]; then
   if [ ! -f "$NETWORK_MARKER" ]; then
-#     sudo mkdir -p /etc/NetworkManager/conf.d
-#     cat <<'EOF' | sudo tee /etc/NetworkManager/conf.d/unmanaged-eth0.conf >/dev/null
-# [keyfile]
-# unmanaged-devices=interface-name:eth0
-# EOF
+    # Disable WiFi using rfkill (persistent across reboots via systemd-rfkill)
+    sudo rfkill block wifi
 
+    # Set DNS configuration (NetworkManager compatible)
     echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
 
-    sudo systemctl disable --now NetworkManager
-    sudo systemctl enable --now systemd-networkd
+    # NetworkManager is already enabled by default in Raspberry Pi OS Bookworm
+    # WiFi is disabled via /etc/NetworkManager/conf.d/99-kiosk.conf (unmanaged-devices)
 
     touch "$NETWORK_MARKER"
   fi

@@ -1,0 +1,15 @@
+[connection]
+id=eth0
+type=ethernet
+interface-name=eth0
+
+[ethernet]
+
+[ipv4]
+address1=192.168.1.100/24
+gateway=192.168.1.1
+dns=1.1.1.1;
+method=manual
+
+[ipv6]
+method=disabled

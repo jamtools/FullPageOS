@@ -237,17 +237,22 @@ const validateIpAddress = (ip: string): boolean => {
 }
 
 const generateNetworkConfig = (touchscreenIp: string, gateway: string): string => {
-    return `[Match]
-Name=eth0
+    // Generate NetworkManager keyfile format
+    return `[connection]
+id=eth0
+type=ethernet
+interface-name=eth0
 
-[Network]
-Address=${touchscreenIp}/24
-Gateway=${gateway}
-DNS=1.1.1.1
-#DHCP=no
-IPv6AcceptRA=no
-#LinkLocalAddressing=ipv4
-KeepConfiguration=yes
+[ethernet]
+
+[ipv4]
+address1=${touchscreenIp}/24
+gateway=${gateway}
+dns=1.1.1.1;
+method=manual
+
+[ipv6]
+method=disabled
 `
 }
 
@@ -272,7 +277,7 @@ const saveConfiguration = async (config: IpConfig): Promise<void> => {
         // Generate and save the network configuration to staging directory
         const networkConfig = generateNetworkConfig(config.touchscreen_ip, config.gateway)
         const configId = `eth0_${Date.now()}`
-        const stagingFile = `${STAGING_PENDING_DIR}/${configId}.network`
+        const stagingFile = `${STAGING_PENDING_DIR}/${configId}.nmconnection`
 
         // Ensure staging directory exists (but don't create if system hasn't set it up)
         try {

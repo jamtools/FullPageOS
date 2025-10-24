@@ -1,7 +1,7 @@
 [Unit]
 Description=Network Configuration Processor
 Documentation=file:///var/lib/network-staging/README.md
-After=systemd-networkd.service
+After=NetworkManager.service
 
 [Service]
 Type=oneshot
@@ -15,7 +15,7 @@ ProtectHome=yes
 PrivateTmp=yes
 
 # File system access - allow what's needed
-ReadWritePaths=/var/lib/network-staging /etc/systemd/network
+ReadWritePaths=/var/lib/network-staging /etc/NetworkManager/system-connections
 
 [Install]
 WantedBy=multi-user.target
