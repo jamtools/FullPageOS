@@ -39,9 +39,9 @@ BROWSER="$(command -v chromium-browser)"
 
 # Start Chromium
 if [ -n "$RUNNING_IN_DOCKER" ]; then
-    $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///config/placeholder.html"
+    $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///config/placeholder.html" --force-renderer-accessibility
 else
     while true; do
-        $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///boot/placeholder.html"
+        $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///boot/placeholder.html" --force-renderer-accessibility
     done
 fi
