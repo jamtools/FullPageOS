@@ -6,10 +6,10 @@ export DISPLAY
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Clear Chromium config and cache, they tend to corrupt themselves, causing Chromium to segfault
-if [ -z "$RUNNING_IN_DOCKER" ]; then
-    rm -rf "$HOME/.config/chromium"
-    rm -rf "$HOME/.cache/chromium"
-fi
+# if [ -z "$RUNNING_IN_DOCKER" ]; then
+rm -rf "$HOME/.config/chromium"
+rm -rf "$HOME/.cache/chromium"
+# fi
 
 # Autohide mouse when inactive
 unclutter &
@@ -27,21 +27,21 @@ unclutter &
 # fi
 
 # Start Python-based controller to ensure reloads on load failures
-if [ -n "$RUNNING_IN_DOCKER" ]; then
-    python3 "$DIR/chromium_controller.py" "$(head -n 1 /config/mutesound.txt)" &
-else
-    python3 "$DIR/chromium_controller.py" "$(head -n 1 /boot/mutesound.txt)" &
-fi
+# if [ -n "$RUNNING_IN_DOCKER" ]; then
+#     python3 "$DIR/chromium_controller.py" "$(head -n 1 /config/mutesound.txt)" &
+# else
+python3 "$DIR/chromium_controller.py" "$(head -n 1 /boot/mutesound.txt)" &
+# fi
 
 BROWSER="$(command -v chromium-browser)"
 [ -z "$BROWSER" ] && BROWSER="$(command -v chromium)"
 
 
 # Start Chromium
-if [ -n "$RUNNING_IN_DOCKER" ]; then
-    $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///config/placeholder.html" --force-renderer-accessibility
-else
-    while true; do
-        $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///boot/placeholder.html" --force-renderer-accessibility
-    done
-fi
+# if [ -n "$RUNNING_IN_DOCKER" ]; then
+#     $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///config/placeholder.html" --force-renderer-accessibility
+# else
+while true; do
+    $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --app="file:///boot/placeholder.html" --force-renderer-accessibility --load-extension=/home/pi/chromium-keyboard
+done
+# fi
