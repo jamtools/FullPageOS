@@ -187,7 +187,7 @@ const generateHtmlForm = (currentValues: CurrentConfig, message?: string): strin
       ${message ? `<div class="message ${message.includes('Error') ? 'error' : 'success'}">${message}</div>` : ''}
       <form method="POST" action="/">
         <div class="form-group">
-          <label for="jace_ip">JACE IP Address:</label>
+          <label for="jace_ip">Host IP Address:</label>
           <input
             type="text"
             id="jace_ip"
