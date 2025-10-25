@@ -138,7 +138,6 @@ class ChromiumController():
             current_time = time.time()
             if (self.using_fallback and
                 current_time - self.last_jace_check_time > self.jace_check_interval):
-                print("Periodic check for JACE availability")
                 self.check_jace_ip()
 
             time.sleep(1)
