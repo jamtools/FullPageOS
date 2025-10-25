@@ -42,6 +42,6 @@ BROWSER="$(command -v chromium-browser)"
 #     $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///config/placeholder.html" --force-renderer-accessibility
 # else
 while true; do
-    $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --app="file:///boot/placeholder.html" --force-renderer-accessibility --load-extension=/home/pi/chromium-keyboard
+    $BROWSER --kiosk --touch-events=enabled --disable-pinch --noerrdialogs --disable-session-crashed-bubble --start-fullscreen --remote-debugging-port=9222 --app="file:///boot/placeholder.html" --force-renderer-accessibility --load-extension=/home/pi/chromium-keyboard --enable-logging=stderr --v=1 2>&1 | tee /home/pi/chromium-debug.log
 done
 # fi
