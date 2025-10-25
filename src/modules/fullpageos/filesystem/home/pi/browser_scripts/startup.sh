@@ -5,10 +5,33 @@ export DISPLAY
 # Get our location
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Clear Chromium config and cache, they tend to corrupt themselves, causing Chromium to segfault
+# Clear Chromium cache and problematic state files that tend to corrupt
+# This preserves:
+# - User-trusted certificates (stored in ~/.pki/nssdb, separate from chromium config)
+# - Extension state (chromium-keyboard)
+# - Some preferences that don't cause corruption
 # if [ -z "$RUNNING_IN_DOCKER" ]; then
-rm -rf "$HOME/.config/chromium"
+
+# Clear main cache directory
 rm -rf "$HOME/.cache/chromium"
+
+# Clear specific problematic directories within config
+rm -rf "$HOME/.config/chromium/Default/Cache"
+rm -rf "$HOME/.config/chromium/Default/Code Cache"
+rm -rf "$HOME/.config/chromium/Default/GPUCache"
+rm -rf "$HOME/.config/chromium/ShaderCache"
+rm -rf "$HOME/.config/chromium/Default/Service Worker"
+
+# Clear crash reports and session data that can cause startup issues
+rm -rf "$HOME/.config/chromium/Crash Reports"
+rm -f "$HOME/.config/chromium/SingletonLock"
+rm -f "$HOME/.config/chromium/Default/Cookies"
+rm -f "$HOME/.config/chromium/Default/Cookies-journal"
+
+# Clear session storage and local storage if they exist
+rm -rf "$HOME/.config/chromium/Default/Session Storage"
+rm -rf "$HOME/.config/chromium/Default/Local Storage"
+
 # fi
 
 # Autohide mouse when inactive
