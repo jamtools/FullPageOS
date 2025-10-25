@@ -144,42 +144,74 @@ class ChromiumController():
             time.sleep(1)
 
     def _response_received(self, **kwargs):
-        doc_root = self.tab.DOM.getDocument()['root']
+        try:
+            doc_root = self.tab.DOM.getDocument()['root']
 
-        if not doc_root['children']:
-            return
+            if not doc_root.get('children'):
+                return
 
-        if not doc_root['children'][-1]['frameId'] == kwargs['frame']['id']:
-            return
+            # Safely check frameId - extension frames might not have this
+            last_child = doc_root['children'][-1]
+            frame_id = last_child.get('frameId')
+            kwargs_frame_id = kwargs.get('frame', {}).get('id')
 
-        if self.mute_time > 0:
-            subprocess.run(['amixer', 'set', 'PCM', 'mute'], check=True)
+            if not frame_id or not kwargs_frame_id or frame_id != kwargs_frame_id:
+                return
 
-            self.mute_time_left = self.mute_time
+            if self.mute_time > 0:
+                subprocess.run(['amixer', 'set', 'PCM', 'mute'], check=True)
 
-        if self.initial_load:
-            self.initial_load = False
+                self.mute_time_left = self.mute_time
+
+            if self.initial_load:
+                self.initial_load = False
+        except Exception as e:
+            print(f"Error in _response_received: {e}")
+            traceback.print_exc()
 
     def _loading_failed(self, **kwargs):
-        # We only care about the main page loading, not of any subelement
-        if (kwargs['type'] != 'Document' or self.tab.DOM.getDocument()['root']['children'][-1]['frameId'] != kwargs['frameId']):
-            return
+        try:
+            # We only care about the main page loading, not of any subelement
+            if kwargs.get('type') != 'Document':
+                return
 
-        time.sleep(5)
-        self._load_page()
+            doc_root = self.tab.DOM.getDocument()['root']
+            if not doc_root.get('children'):
+                return
+
+            last_child = doc_root['children'][-1]
+            frame_id = last_child.get('frameId')
+            kwargs_frame_id = kwargs.get('frameId')
+
+            if not frame_id or not kwargs_frame_id or frame_id != kwargs_frame_id:
+                return
+
+            print(f"Main page loading failed, retrying in 5 seconds...")
+            time.sleep(5)
+            self._load_page()
+        except Exception as e:
+            print(f"Error in _loading_failed: {e}")
+            traceback.print_exc()
 
     def _load_page(self):
         # Use dynamic jace URL instead of cycling through kiosk_urls
         self.initial_load = True
 
+        print(f"[Controller] Navigating to: {self.current_jace_url}")
+
         # Use location.replace() to navigate without adding to history
         js_code = f"window.location.replace('{self.current_jace_url}');"
         try:
             self.tab.Runtime.evaluate(expression=js_code)
+            print(f"[Controller] Navigation via JavaScript succeeded")
         except Exception as e:
-            print(f"Failed to use location.replace, falling back to navigate: {e}")
+            print(f"[Controller] Failed to use location.replace, falling back to navigate: {e}")
             # Fallback to normal navigation if Runtime.evaluate fails
-            self.tab.Page.navigate(url=self.current_jace_url)
+            try:
+                self.tab.Page.navigate(url=self.current_jace_url)
+                print(f"[Controller] Navigation via Page.navigate succeeded")
+            except Exception as e2:
+                print(f"[Controller] Page.navigate also failed: {e2}")
 
 
 while True:
