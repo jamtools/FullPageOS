@@ -30,7 +30,7 @@ unclutter &
 # if [ -n "$RUNNING_IN_DOCKER" ]; then
 #     python3 "$DIR/chromium_controller.py" "$(head -n 1 /config/mutesound.txt)" &
 # else
-python3 "$DIR/chromium_controller.py" "$(head -n 1 /boot/mutesound.txt)" &
+python3 "$DIR/chromium_controller.py" "$(head -n 1 /boot/mutesound.txt)" 2>&1 | tee /home/pi/controller-debug.log &
 # fi
 
 BROWSER="$(command -v chromium-browser)"
