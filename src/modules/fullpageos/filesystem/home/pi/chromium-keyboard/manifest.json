@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "version": "0.5.6",
+  "name": "simple-virtual-keyboard",
+  "description": "A native virtual keyboard based on the simple-keyboard package.",
+  "icons": {
+    "48": "icons/icon_128.png"
+  },
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "options_ui": {
+    "page": "options_ui/page.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "run_at": "document_idle",
+      "js": [
+        "content_scripts/content-0.js"
+      ],
+      "css": []
+    }
+  ],
+  "author": "Alex9849",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6v2M+NZplC6IRmj6OVHhnzBfRfSIDm2rE3PNOyVLKSykOssh3onIDXcnrbQxIVe+pCqNQPvF+zSLTmvv81YkYCY2nnMPYSOxJC6MPIee4NW+MFfCKUapt9a8TTL7W2EHrO8apvztop5WglcyTXdT4JPsl0LFV5Kz481cI1SHapL1tCWmRJx3IyZpNcYwnfUrSNUWeVoQY08pYZiF1hFSrjTWoxDgXLwUjN5Vns5/Y9dTgUfzcTND43WZ8siSwuzzZ01YLD8VrQO2y2KlYAbZEddBl+ne29OPpW+GgcE861cpNvWZvnyca3swr9wYduhbTgADZef/Fc6Y94/8KTHqIwIDAQAB",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content_scripts/contentScript.3a8356c2.css"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}
