@@ -1,0 +1,123 @@
+!/bin/sh
+
+CODENAME=$(cat /etc/os-release | grep VERSION_CODENAME=)
+CODENAME=${CODENAME#VERSION_CODENAME=}
+
+BOOT_DIR=$(lsblk | grep /boot | awk '{print $7}')
+CONFIG_FILE="${BOOT_DIR}/config.txt"
+if [ ! -f "$CONFIG_FILE" ];then
+    exit 0
+fi
+
+auto_add(){
+    local value=$1
+    grep -q "^${value}" $CONFIG_FILE
+    if [ $? -ne 0 ];then
+        sed -i '$a '"${value}" $CONFIG_FILE
+    fi
+}
+
+write_ini(){
+    local t_user=$1
+    mkdir -p /home/${t_user}.config/
+cat > /home/${t_user}/.config/wayfire.ini << EOF
+[command]
+repeatable_binding_volume_up = KEY_VOLUMEUP
+command_volume_up = wfpanelctl volumepulse volu
+repeatable_binding_volume_down = KEY_VOLUMEDOWN
+command_volume_down = wfpanelctl volumepulse vold
+binding_mute = KEY_MUTE
+command_mute = wfpanelctl volumepulse mute
+binding_menu = <super>
+command_menu = wfpanelctl smenu menu
+binding_terminal = <ctrl> <alt> KEY_T
+command_terminal = lxterminal
+binding_bluetooth = <ctrl> <alt> KEY_B
+command_bluetooth = wfpanelctl bluetooth menu
+binding_netman = <ctrl> <alt> KEY_W
+command_netman = wfpanelctl netman menu
+binding_grim = KEY_SYSRQ
+command_grim = grim
+binding_orca = <ctrl> <alt> KEY_SPACE
+command_orca = gui-pkinst orca reboot
+binding_quit = <ctrl> <alt> KEY_DELETE
+command_quit = lxde-pi-shutdown-helper
+binding_power = KEY_POWER
+command_power = pwrkey
+
+[input-device:generic ft5x06 (79)]
+output = DSI-1
+
+[input-device:generic ft5x06 (80)]
+output = DSI-1
+
+[input-device:FT5406 memory based driver]
+output = DSI-1
+
+[input]
+xkb_model = pc105
+xkb_layout = gb
+xkb_variant =
+
+[output:DSI-2]
+mode = 800x1280@40000
+position = 0,0
+transform = 90
+
+[input-device:Goodix Capacitive TouchScreen]
+output = DSI-2
+
+[window-rules]
+rule-1 = on created if title is "LXTerminal" then maximize
+
+[input-device:4-0014 Goodix Capacitive TouchScreen]
+output = DSI-2
+EOF
+    chown -R ${t_user}:${t_user} /home/${t_user}/.config
+}
+
+do_labwc(){
+    local t_user=$1
+    mkdir -p /home/${t_user}/.config/
+    mkdir -p /home/${t_user}/.config/labwc
+    mkdir -p /home/${t_user}/.config/kanshi
+
+cat > /home/${t_user}/.config/kanshi/config << EOF
+profile {
+        output DSI-2 mode 800x1280 position 0,0 transform 90
+}
+EOF
+cat > /home/${t_user}/.config/labwc/rc.xml << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<labwc_config>
+  <touch deviceName="4-0014 Goodix Capacitive TouchScreen" mapToOutput="DSI-2"/>
+</labwc_config>
+EOF
+chown -R ${t_user}:${t_user} /home/${t_user}/.config
+}
+
+write_ini_auto(){
+    if [ -f "/usr/bin/labwc" ];then
+        raspi-config nonint do_wayland W3
+    fi
+
+    for t_user in `ls /home/`
+    do
+        if [ -d "/home/${t_user}" ];then
+            do_labwc ${t_user}
+            write_ini "${t_dir}"
+        fi
+    done
+}
+
+start(){
+    auto_add "dtoverlay=vc4-kms-dsi-rzw-t101p136cq-rpi5-2lane,interrupt=2"
+    auto_add "dtoverlay=imx219,cam0"
+    echo "" >> $CONFIG_FILE
+
+    write_ini_auto
+}
+
+start
+
+exit 0

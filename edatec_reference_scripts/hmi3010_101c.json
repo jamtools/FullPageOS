@@ -1,0 +1,11 @@
+{
+    "debs": "ed-linux-image-6.6.31-2712 ed-hmi3010-101c-firmware",
+    "test": {
+        "target": "30xx",
+        "json": "delivery-hmi3010-v2.json"
+    },
+    "cmd": [
+        "curl -s 'https://apt.edatec.cn/downloads/202403/kernel-change.sh' | sudo bash -s 6.6.31-rpi-2712",
+        "dpkg -l | grep linux-image | awk '{print $2}' | grep ^linux | while read line; do sudo apt-mark hold $line; done"
+    ]
+}
