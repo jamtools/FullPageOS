@@ -1,0 +1,19 @@
+[Unit]
+Description=Backlight Dimmer for Inactivity
+Documentation=file:///custom_scripts/backlight-dimmer.sh
+After=graphical-session.target
+Requires=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Wait a bit for the display to be fully initialized
+ExecStartPre=/bin/sleep 10
+ExecStart=/bin/bash /custom_scripts/backlight-dimmer.sh
+Restart=always
+RestartSec=5
+# Set environment for X access
+Environment="DISPLAY=:0"
+
+[Install]
+WantedBy=default.target

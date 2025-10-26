@@ -57,6 +57,12 @@ measure_time "Installing unclutter" apt-get install -y unclutter
 # Install xdotool
 measure_time "Installing xdotool" apt-get install -y xdotool
 
+# Install xprintidle for better idle detection in backlight dimmer
+measure_time "Installing xprintidle" apt-get install -y xprintidle
+
+# Add pi user to video group for backlight control
+measure_time "Adding pi to video group" usermod -a -G video pi
+
 systemctl enable firstboot.service
 
 systemctl enable boot-logger.service

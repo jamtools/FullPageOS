@@ -8,6 +8,9 @@ runuser -l pi -c 'systemctl --user start install-edatec.service'
 runuser -l pi -c 'systemctl --user enable ip-configurator.service'
 runuser -l pi -c 'systemctl --user start ip-configurator.service'
 
+runuser -l pi -c 'systemctl --user enable backlight-dimmer.service'
+runuser -l pi -c 'systemctl --user start backlight-dimmer.service'
+
 MARKER="$HOME/.edatec_installed"
 NETWORK_MARKER="$HOME/.network_configured"
 if [ -f "$MARKER" ]; then
