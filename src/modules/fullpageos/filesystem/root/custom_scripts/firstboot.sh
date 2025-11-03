@@ -16,7 +16,8 @@ NETWORK_MARKER="$HOME/.network_configured"
 if [ -f "$MARKER" ]; then
   if [ ! -f "$NETWORK_MARKER" ]; then
     # Disable WiFi using rfkill (persistent across reboots via systemd-rfkill)
-    sudo rfkill block wifi
+    # TODO: Temporarily disabled for testing
+    # sudo rfkill block wifi
 
     # Set DNS configuration (NetworkManager compatible)
     echo "nameserver 1.1.1.1" | sudo tee /etc/resolv.conf
