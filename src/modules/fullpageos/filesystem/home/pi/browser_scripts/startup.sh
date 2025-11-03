@@ -37,9 +37,11 @@ rm -rf "$HOME/.config/chromium/Default/Local Storage"
 # Autohide mouse when inactive
 unclutter &
 
-# Configure screen blanking/dimming after 10 minutes of inactivity
-xset s 600 600          # Screen saver timeout at 10 minutes
-xset dpms 600 600 600   # DPMS: standby, suspend, off at 10 minutes
+# Disable DPMS and screen blanking - we handle backlight control manually via backlight-dimmer.sh
+# This prevents conflicts between X11 power management and our custom backlight control
+xset s off              # Disable screen saver
+xset s noblank          # Don't blank the screen
+xset -dpms              # Disable DPMS (Display Power Management Signaling)
 
 # # Give pi account a complex random password
 # if [ -z "$RUNNING_IN_DOCKER" ] && [ -e "/boot/autosecure" ]
