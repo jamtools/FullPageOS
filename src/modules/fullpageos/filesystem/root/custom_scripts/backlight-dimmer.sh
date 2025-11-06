@@ -3,10 +3,10 @@
 # This provides hardware-level backlight control that works when DPMS doesn't
 
 # Configuration
-IDLE_TIMEOUT=600  # 10 minutes in seconds
-CHECK_INTERVAL=5  # Check every 5 seconds
-DIM_STEPS=10      # Number of steps for progressive dimming
-DIM_STEP_DELAY=0.5 # Delay between dimming steps in seconds
+DIM_TIMEOUT=600    # Time until dim (10 minutes)
+OFF_TIMEOUT=900    # Time until off (15 minutes total: 10min + 5min)
+CHECK_INTERVAL=5   # Check every 5 seconds
+DIM_BRIGHTNESS_PERCENT=25  # Dim to 25% of max brightness
 MIN_BRIGHTNESS=0   # Minimum brightness level (0 = off)
 
 # Backlight paths (automatically detect the correct one)
@@ -29,8 +29,10 @@ ACTUAL_BRIGHTNESS_FILE="$BACKLIGHT_PATH/actual_brightness"
 
 # Get maximum brightness value
 MAX_BRIGHTNESS=$(cat "$MAX_BRIGHTNESS_FILE")
+DIM_BRIGHTNESS=$((MAX_BRIGHTNESS * DIM_BRIGHTNESS_PERCENT / 100))
 echo "Backlight device: $BACKLIGHT_PATH"
 echo "Maximum brightness: $MAX_BRIGHTNESS"
+echo "Dim brightness (${DIM_BRIGHTNESS_PERCENT}%): $DIM_BRIGHTNESS"
 
 # State tracking
 STATE="on"  # on, dimmed, off
@@ -47,74 +49,66 @@ set_brightness() {
     echo "$value" > "$BRIGHTNESS_FILE"
 }
 
+# Timestamp file used by input monitor
+TIMESTAMP_FILE="/tmp/last_input_activity"
+
 # Function to get idle time in milliseconds
 get_idle_time() {
-    local x_idle=999999999
-    local touch_idle=999999999
+    local current_time_ms=$(date +%s%3N)
+    local input_idle=999999999
 
-    # Get X11 idle time
+    # Read last input activity timestamp from file (written by Python monitor)
+    if [ -f "$TIMESTAMP_FILE" ]; then
+        local last_activity=$(cat "$TIMESTAMP_FILE" 2>/dev/null || echo 0)
+        if [ "$last_activity" -gt 0 ]; then
+            input_idle=$((current_time_ms - last_activity))
+        fi
+    fi
+
+    # Also check X11 idle time for non-touch input (keyboard, mouse via X)
+    local x_idle=999999999
     if command -v xprintidle &> /dev/null; then
         x_idle=$(xprintidle 2>/dev/null || echo 999999999)
     fi
 
-    # Get touch device idle time by checking last event time
-    # Find touch input devices (typically event0 or event1 for touchscreens)
-    for input_device in /dev/input/event*; do
-        if [ -r "$input_device" ]; then
-            # Get last access time of the device file in seconds since epoch
-            local last_access=$(stat -c %X "$input_device" 2>/dev/null || stat -f %a "$input_device" 2>/dev/null || echo 0)
-            local current_time=$(date +%s)
-            local device_idle_sec=$((current_time - last_access))
-            local device_idle_ms=$((device_idle_sec * 1000))
-
-            # Use the minimum idle time from all devices
-            if [ "$device_idle_ms" -lt "$touch_idle" ]; then
-                touch_idle=$device_idle_ms
-            fi
-        fi
-    done
-
     # Return the minimum idle time (most recent activity)
-    if [ "$x_idle" -lt "$touch_idle" ]; then
+    if [ "$x_idle" -lt "$input_idle" ]; then
         echo "$x_idle"
     else
-        echo "$touch_idle"
+        echo "$input_idle"
     fi
 }
 
-# Function to progressively dim backlight
-backlight_dim() {
-    if [ "$STATE" != "off" ]; then
+# Function to set backlight to dim state
+backlight_to_dim() {
+    if [ "$STATE" = "on" ]; then
         SAVED_BRIGHTNESS=$(get_brightness)
-        local current=$SAVED_BRIGHTNESS
-        local step=$(( (current - MIN_BRIGHTNESS) / DIM_STEPS ))
+        set_brightness "$DIM_BRIGHTNESS"
+        STATE="dimmed"
+        echo "$(date): Backlight dimmed to ${DIM_BRIGHTNESS_PERCENT}% ($DIM_BRIGHTNESS) - was $SAVED_BRIGHTNESS"
+    fi
+}
 
-        # Ensure step is at least 1 to avoid infinite loop
-        if [ "$step" -lt 1 ]; then
-            step=1
+# Function to turn backlight off
+backlight_to_off() {
+    if [ "$STATE" != "off" ]; then
+        # Save current brightness if not already saved
+        if [ -z "$SAVED_BRIGHTNESS" ]; then
+            SAVED_BRIGHTNESS=$(get_brightness)
         fi
 
-        echo "$(date): Progressively dimming backlight from $current to $MIN_BRIGHTNESS..."
+        set_brightness "$MIN_BRIGHTNESS"
+        STATE="off"
 
         # Block touch input to prevent ghost touches during wake-up
         block_touch_input
 
-        while [ "$current" -gt "$MIN_BRIGHTNESS" ]; do
-            current=$((current - step))
-            if [ "$current" -lt "$MIN_BRIGHTNESS" ]; then
-                current=$MIN_BRIGHTNESS
-            fi
-            set_brightness "$current"
-            sleep "$DIM_STEP_DELAY"
-        done
-
-        STATE="off"
-        echo "$(date): Backlight dimmed to $MIN_BRIGHTNESS (was $SAVED_BRIGHTNESS)"
+        echo "$(date): Backlight OFF - was at brightness $SAVED_BRIGHTNESS"
     fi
 }
 
-# Function to progressively restore backlight
-backlight_on() {
+# Function to restore backlight to full brightness
+backlight_to_on() {
     if [ "$STATE" != "on" ]; then
         local target_brightness
         if [ -n "$SAVED_BRIGHTNESS" ] && [ "$SAVED_BRIGHTNESS" -gt 0 ]; then
@@ -123,32 +117,13 @@ backlight_on() {
             target_brightness="$MAX_BRIGHTNESS"
         fi
 
-        local current=$(get_brightness)
-        local step=$(( (target_brightness - current) / DIM_STEPS ))
-
-        # Ensure step is at least 1
-        if [ "$step" -lt 1 ]; then
-            step=1
-        fi
-
-        echo "$(date): Progressively restoring backlight from $current to $target_brightness..."
-
-        while [ "$current" -lt "$target_brightness" ]; do
-            current=$((current + step))
-            if [ "$current" -gt "$target_brightness" ]; then
-                current=$target_brightness
-            fi
-            set_brightness "$current"
-            sleep "$DIM_STEP_DELAY"
-        done
-
+        set_brightness "$target_brightness"
         STATE="on"
 
-        # Small delay before unblocking to prevent immediate click-through
-        sleep 0.5
+        # Unblock touch input if it was blocked
         unblock_touch_input
 
-        echo "$(date): Backlight restored to $target_brightness"
+        echo "$(date): Backlight ON - restored to $target_brightness"
     fi
 }
 
@@ -186,9 +161,28 @@ if ! command -v xprintidle &> /dev/null; then
     echo "Warning: xprintidle not found. Using xset for idle detection (less accurate)"
 fi
 
+# Start Python-based input event monitor in background
+MONITOR_SCRIPT="/custom_scripts/input-activity-monitor.py"
+if [ -f "$MONITOR_SCRIPT" ]; then
+    python3 "$MONITOR_SCRIPT" &
+    INPUT_MONITOR_PID=$!
+    echo "Started input event monitor (PID: $INPUT_MONITOR_PID)"
+
+    # Trap to clean up background process on exit
+    trap "kill $INPUT_MONITOR_PID 2>/dev/null" EXIT
+
+    # Give the monitor a moment to initialize
+    sleep 1
+else
+    echo "Warning: Input activity monitor not found at $MONITOR_SCRIPT"
+    echo "Falling back to X11-only idle detection"
+fi
+
 # Main monitoring loop
 echo "Starting backlight dimmer daemon..."
-echo "Idle timeout: ${IDLE_TIMEOUT}s"
+echo "Stage 1 (Full brightness): Always on when active"
+echo "Stage 2 (Dim to ${DIM_BRIGHTNESS_PERCENT}%): After ${DIM_TIMEOUT}s idle"
+echo "Stage 3 (Off): After ${OFF_TIMEOUT}s idle"
 echo "Check interval: ${CHECK_INTERVAL}s"
 
 while true; do
@@ -196,12 +190,15 @@ while true; do
     IDLE_MS=$(get_idle_time)
     IDLE_SECONDS=$((IDLE_MS / 1000))
 
-    if [ "$IDLE_SECONDS" -ge "$IDLE_TIMEOUT" ]; then
-        # User has been idle long enough - dim backlight
-        backlight_dim
+    if [ "$IDLE_SECONDS" -ge "$OFF_TIMEOUT" ]; then
+        # Stage 3: Turn off completely
+        backlight_to_off
+    elif [ "$IDLE_SECONDS" -ge "$DIM_TIMEOUT" ]; then
+        # Stage 2: Dim the backlight
+        backlight_to_dim
     else
-        # User is active - ensure backlight is on
-        backlight_on
+        # Stage 1: Full brightness (user is active)
+        backlight_to_on
     fi
 
     sleep "$CHECK_INTERVAL"
