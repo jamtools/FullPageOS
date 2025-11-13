@@ -1,0 +1,24 @@
+{
+  "private": false,
+  "name": "simple-virtual-keyboard",
+  "description": "A native virtual keyboard based on the simple-keyboard package",
+  "version": "0.5.7",
+  "author": {
+    "name": "Alexander Liggesmeyer",
+    "email": "projects@liggesmeyer.net",
+    "url": "https://alexander.liggesmeyer.net"
+  },
+  "scripts": {
+    "dev-f": "extension dev --browser=firefox",
+    "dev-c": "extension dev --browser=chrome",
+    "start": "extension start --polyfill",
+    "build": "extension build --polyfill"
+  },
+  "dependencies": {
+    "simple-keyboard": "^3.8.49",
+    "simple-keyboard-layouts": "^3.4.79"
+  },
+  "devDependencies": {
+    "extension": "^2.0.0-rc.23"
+  }
+}
