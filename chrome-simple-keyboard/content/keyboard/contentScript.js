@@ -2,7 +2,7 @@
 
 import Keyboard from 'simple-keyboard';
 import cssURL from './contentScript.css';
-import {triggerElementAction, isVisible, triggerFormSubmit, performNativeKeyPress, isChildElement} from './utils'
+import {triggerElementAction, isVisible, triggerFormSubmit, performNativeKeyPress, isChildElement, isTextInput, findTextInputInPath, getDeepActiveElement} from './utils'
 import arabic from "simple-keyboard-layouts/build/layouts/arabic";
 import assamese from "simple-keyboard-layouts/build/layouts/assamese";
 import armenianEastern from "simple-keyboard-layouts/build/layouts/armenianEastern";
@@ -115,6 +115,51 @@ let shiftPressed = false;
 let lockPressed = false;
 let isMouseDown = false;
 
+/**
+ * Handle focusin events - works across shadow DOM boundaries
+ */
+function handleFocusIn(event) {
+    if (isMouseDown) {
+        return;
+    }
+
+    // Skip if focus is on the keyboard itself
+    if (isChildElement(event.target, keyboardElement)) {
+        return;
+    }
+
+    // Use composedPath to find inputs in shadow DOM
+    const textInput = findTextInputInPath(event);
+
+    if (textInput && textInput !== inputElement) {
+        onFocus(textInput);
+    }
+}
+
+/**
+ * Handle pointer/touch down events - detects taps on inputs in shadow DOM
+ */
+function handlePointerDown(event) {
+    // Skip if interacting with the keyboard
+    if (isChildElement(event.target, keyboardElement)) {
+        return;
+    }
+
+    // Use composedPath to find inputs in shadow DOM
+    const textInput = findTextInputInPath(event);
+
+    if (textInput) {
+        // Let the focusin handler take care of showing the keyboard
+        // This just ensures we detected the input correctly
+        return;
+    }
+
+    // Check if clicking outside any input while keyboard is shown
+    if (inputElement && !textInput && !isMouseDown) {
+        // Will be handled by existing blur logic
+    }
+}
+
 function setup() {
     chrome.storage.sync.get({
         language: 'english',
@@ -155,6 +200,11 @@ function setup() {
     document.body.addEventListener('mouseup', e => onMouseUp());
     document.body.addEventListener('keydown', e => onPhysicalKeyDown(e));
     document.body.addEventListener('keyup', e => onPhysicalKeyUp(e));
+
+    // Enhanced shadow DOM and iframe support - use focusin (bubbles through shadow DOM)
+    document.addEventListener('focusin', handleFocusIn, true);
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('touchstart', handlePointerDown, true);
 
     ['input', 'pointerdown', 'mousedown', 'pointerup', 'mouseup', 'selectstart', 'click'].forEach(key => {
         window.addEventListener(key, event => {
@@ -463,19 +513,16 @@ function autoToggleKeyboard() {
     if(isMouseDown) {
         return
     }
-    
-    if(document.activeElement.matches(querySelector)) {
-        if (inputElement === document.activeElement) {
+
+    // Use deep active element to traverse all shadow DOM levels
+    const deepActiveElement = getDeepActiveElement();
+
+    if(deepActiveElement && deepActiveElement.matches && deepActiveElement.matches(querySelector)) {
+        if (inputElement === deepActiveElement) {
             return
         }
 
-        onFocus(document.activeElement)
-    } else if(document.activeElement.shadowRoot?.activeElement.matches(querySelector)) {
-        if (inputElement === document.activeElement.shadowRoot.activeElement){
-            return
-        }
-
-        onFocus(document.activeElement.shadowRoot.activeElement)
+        onFocus(deepActiveElement)
     } else {
         if (inputElement === null) {
             return;
