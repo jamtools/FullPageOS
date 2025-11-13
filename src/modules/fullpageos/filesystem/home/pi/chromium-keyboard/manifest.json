@@ -22,6 +22,7 @@
         "<all_urls>"
       ],
       "run_at": "document_idle",
+      "all_frames": true,
       "js": [
         "content_scripts/content-0.js"
       ],

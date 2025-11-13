@@ -12,7 +12,7 @@
     "dev-f": "extension dev --browser=firefox",
     "dev-c": "extension dev --browser=chrome",
     "start": "extension start --polyfill",
-    "build": "extension build --polyfill"
+    "build": "extension build --polyfill && rm -rf ../src/modules/fullpageos/filesystem/home/pi/chromium-keyboard && cp -r dist/chrome ../src/modules/fullpageos/filesystem/home/pi/chromium-keyboard"
   },
   "dependencies": {
     "simple-keyboard": "^3.8.49",
